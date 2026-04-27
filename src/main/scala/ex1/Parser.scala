@@ -31,11 +31,21 @@ class NonEmptyParser(chars: Set[Char])
     with NonEmpty[Char]
 
 trait NotTwoConsecutive[T] extends Parser[T]:
-  val todo = ???
-// ???
+  private[this] var prev: Option[T] = None
+
+  abstract override def parse(t: T): Boolean = prev match
+    case Some(n) =>
+      if n == t then false
+      else
+        prev = Some(t)
+        super.parse(t)
+    case None =>
+      prev = Some(t)
+      super.parse(t)
+
 
 class NotTwoConsecutiveParser(chars: Set[Char])
-    extends BasicParser(chars) // with ????
+    extends BasicParser(chars) with NotTwoConsecutive[Char]
 
 @main def checkParsers(): Unit =
   def parser = new BasicParser(Set('a', 'b', 'c'))
