@@ -1,5 +1,7 @@
 package ex2
 
+import scala.util.Random
+
 type Position = (Int, Int)
 enum Direction:
   case North, East, South, West
@@ -42,9 +44,54 @@ class LoggingRobot(val robot: Robot) extends Robot:
     robot.act()
     println(robot.toString)
 
+class RobotWithBattery(val robot: Robot, var battery: Double, val amount: Double) extends Robot:
+  export robot.{position, direction, turn}
+  override def act(): Unit =
+    if battery > amount then
+      robot.act()
+      battery -= amount
+    else
+      println("Recharge robot")
+
+class RobotCanFail(val robot: Robot, val probability: Double) extends Robot:
+  export robot.{position, direction, turn}
+  override def act(): Unit =
+    if Random.nextDouble() <= probability then
+      robot.act()
+    else
+      println("Failed")
+
+class RobotRepeated(val robot: Robot, val repeat: Int) extends Robot:
+  export robot.{position, direction, turn}
+  override def act(): Unit =
+    for
+      i <- 1 until repeat
+    yield
+      robot.act()
+
+
 @main def testRobot(): Unit =
-  val robot = LoggingRobot(SimpleRobot((0, 0), Direction.North))
-  robot.act() // robot at (0, 1) facing North
-  robot.turn(robot.direction.turnRight) // robot at (0, 1) facing East
-  robot.act() // robot at (1, 1) facing East
-  robot.act() // robot at (2, 1) facing East
+  val robot = SimpleRobot((0, 0), Direction.North)
+  val robotLogging = LoggingRobot(robot)
+  robotLogging.act() // robot at (0, 1) facing North
+  robotLogging.turn(robot.direction.turnRight) // robot at (0, 1) facing East
+  robotLogging.act() // robot at (1, 1) facing East
+  robotLogging.act() // robot at (2, 1) facing East
+  val battery = 100
+  val decrement = 30
+  val robotWithBattery = RobotWithBattery(robotLogging, battery, decrement)
+  for
+    i <- 1 to (battery / decrement) + 1
+  yield
+    robotWithBattery.act()
+
+  val probability = 0.50
+  val robotCanFail = RobotCanFail(robotLogging, probability)
+  for
+    i <- 1 to 10
+  yield
+    robotCanFail.act()
+
+  val repetitions = 5
+  val robotRepeated = RobotRepeated(robotLogging, repetitions)
+  robotRepeated.act()
